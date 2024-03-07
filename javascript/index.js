@@ -9,7 +9,15 @@ const POLYLINE_ENDPOINT = "complete-polyline-from-mapping-service";
 
 const source = { longitude: "-75.1652", latitude: "39.9526" }; // Philadelphia, PA
 const destination = { longitude: "-74.0060", latitude: "40.7128" }; // New York, NY
-const vehicleType = "2AxlesAuto";
+
+// Explore https://tollguru.com/toll-api-docs to get best of all the parameter that tollguru has to offer
+const request_parameters = {
+  vehicle: {
+    type: "2AxlesAuto",
+  },
+  // Visit https://en.wikipedia.org/wiki/Unix_time to know the time format
+  departure_time: "2021-01-05T09:46:08Z",
+};
 
 const url = `${MAPBOX_API_URL}/${source.longitude},${source.latitude};${destination.longitude},${destination.latitude}?geometries=polyline&access_token=${MAPBOX_API_KEY}&overview=full`;
 
@@ -38,9 +46,7 @@ const handleRoute = (e, r, body) => {
       body: JSON.stringify({
         source: "mapbox",
         polyline: _polyline,
-        vehicle: {
-          type: vehicleType,
-        },
+        ...request_parameters,
       }),
     },
     (e, r, body) => {

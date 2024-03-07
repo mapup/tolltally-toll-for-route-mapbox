@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	MAPBOX_API_KEY   string = os.Getenv("MAPBOX_API_KEY")
-	TOLLGURU_API_KEY string = os.Getenv("TOLLGURU_API_KEY")
+	MAPBOX_API_KEY   string = "***REMOVED***"
+	TOLLGURU_API_KEY string = "***REMOVED***"
 )
 
 const (
@@ -25,6 +25,18 @@ const (
 	TOLLGURU_API_URL  = "https://apis.tollguru.com/toll/v2"
 	POLYLINE_ENDPOINT = "complete-polyline-from-mapping-service"
 )
+
+// Replace with path to your CSV file
+const filePath = "test.csv"
+
+// Explore https://tollguru.com/toll-api-docs to get best of all the parameter that tollguru has to offer
+var requestParams = map[string]interface{}{
+	"vehicle": map[string]interface{}{
+		"type": "2AxlesAuto",
+	},
+	// Visit https://en.wikipedia.org/wiki/Unix_time to know the time format
+	"departure_time": "2021-01-05T09:46:08Z",
+}
 
 var (
 	source_longitude float32
@@ -53,7 +65,7 @@ func readCsvFile(filePath string) [][]string {
 }
 
 func main() {
-	records := readCsvFile("File_Path")
+	records := readCsvFile(filePath)
 
 	for i := 1; i < len(records); i++ {
 		origin_address := records[i][1]
@@ -163,15 +175,18 @@ func main() {
 		polyline := result_mapbox["routes"].([]interface{})[0].(map[string]interface{})["geometry"].(string)
 
 		// Tollguru API request
-
 		url_tollguru := fmt.Sprintf("%s/%s", TOLLGURU_API_URL, POLYLINE_ENDPOINT)
 
-		requestBody, err := json.Marshal(map[string]string{
-			"source":         "mapbox",
-			"polyline":       polyline,
-			"vehicleType":    "2AxlesAuto",
-			"departure_time": "2021-01-05T09:46:08Z",
-		})
+		params := map[string]interface{}{
+			"source":   "mapbox",
+			"polyline": polyline,
+		}
+	
+		for k, v := range requestParams {
+			params[k] = v
+		}
+	
+		requestBody, err := json.Marshal(params)
 
 		request, err := http.NewRequest("POST", url_tollguru, bytes.NewBuffer(requestBody))
 		request.Header.Set("x-api-key", TOLLGURU_API_KEY)

@@ -64,8 +64,8 @@ curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 $postdata = array(
 	"source" => "mapbox",
 	"polyline" => $polyline_mapbox,
+  ...$request_parameters,
 );
-$postdata = array_merge($postdata, $request_parameters);
 
 // JSON encoding source and polyline to send as postfields..
 $encode_postData = json_encode($postdata);

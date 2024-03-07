@@ -18,10 +18,17 @@ def get_toll_rate(source,destination)
         return  coord['features'].pop['geometry']['coordinates']
     end
 
-    # Source Details - Using Geocoding API
     source = get_coord_array(source)
-    # Destination Details - Using Geocoding API
     destination = get_coord_array(destination)
+    
+    # Explore https://tollguru.com/toll-api-docs to get the best of all the parameters that tollguru has to offer
+    request_parameters = {
+        "vehicle": {
+        "type": "2AxlesAuto",
+        },
+        # Visit https://en.wikipedia.org/wiki/Unix_time to know the time format
+        "departure_time": "2021-01-05T09:46:08Z",
+    }
 
     # GET Request to Mapbox for Polyline
 
@@ -39,10 +46,10 @@ def get_toll_rate(source,destination)
     end
 
     # Sending POST request to TollGuru
-    TOLLGURU_URL = "#{TOLLGURU_API_URL}/#{POLYLINE_ENDPOINT}"
+    tollguru_url = "#{TOLLGURU_API_URL}/#{POLYLINE_ENDPOINT}"
     headers = {'content-type' => 'application/json', 'x-api-key' => TOLLGURU_API_KEY}
-    body = {'source' => "mapbox", 'polyline' => mapbox_polyline, 'vehicleType' => "2AxlesAuto", 'departure_time' => "2021-01-05T09:46:08Z"}
-    tollguru_response = HTTParty.post(TOLLGURU_URL,:body => body.to_json, :headers => headers)
+    body = {'source' => "mapbox", 'polyline' => mapbox_polyline, **request_parameters}
+    tollguru_response = HTTParty.post(tollguru_url,:body => body.to_json, :headers => headers)
     begin
         toll_body = JSON.parse(tollguru_response.body)    
         if toll_body["route"]["hasTolls"] == true

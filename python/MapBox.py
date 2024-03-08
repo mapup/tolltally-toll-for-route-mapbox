@@ -55,12 +55,12 @@ def get_polyline_from_mapbox(
     # Converting the response to JSON
     response_from_mapbox = requests.get(url, timeout=200).json()
     # Checking for errors in response
-    if str(response_from_mapbox).find("message") == -1:
+    if "routes" in response_from_mapbox:
         # Extracting polyline if no error
         polyline_from_mapbox = response_from_mapbox["routes"][0]["geometry"]
         return polyline_from_mapbox
     else:
-        raise Exception("{}".format(response_from_mapbox["message"]))
+        raise Exception("{}".format(response_from_mapbox.get("message", "Unknown error")))
 
 # Calling TollGuru API
 def get_rates_from_tollguru(polyline, count=0):

@@ -11,9 +11,16 @@ TOLLGURU_API_KEY = os.environ.get("TOLLGURU_API_KEY")
 TOLLGURU_API_URL = "https://apis.tollguru.com/toll/v2"
 POLYLINE_ENDPOINT = "complete-polyline-from-mapping-service"
 
-"""Fetching geocode from Mapbox"""
+# Explore https://tollguru.com/toll-api-docs to get best of all the parameter that TollGuru has to offer
+request_parameters = {
+    "vehicle": {
+        "type": "2AxlesAuto"
+    },
+    # Visit https://en.wikipedia.org/wiki/Unix_time to know the time format
+    "departure_time": "2021-01-05T09:46:08Z",
+}
 
-
+# Fetching geocode from Mapbox
 def get_geocode_from_mapbox(address):
     address_actual = address
     address = address.replace(" ", "%20").replace(",", "%2C")
@@ -30,9 +37,7 @@ def get_geocode_from_mapbox(address):
         return (False, False)
 
 
-"""Fetching Polyline from Mapbox"""
-
-
+# Fetching Polyline from Mapbox
 def get_polyline_from_mapbox(
     source_longitude, source_latitude, destination_longitude, destination_latitude
 ):
@@ -57,10 +62,7 @@ def get_polyline_from_mapbox(
     else:
         raise Exception("{}".format(response_from_mapbox["message"]))
 
-
-"""Calling Tollguru API"""
-
-
+# Calling Tollguru API
 def get_rates_from_tollguru(polyline, count=0):
     # Tollguru querry url
     Tolls_URL = f"{TOLLGURU_API_URL}/{POLYLINE_ENDPOINT}"
@@ -70,8 +72,7 @@ def get_rates_from_tollguru(polyline, count=0):
         # explore https://tollguru.com/developers/docs/ to get best off all the parameter that tollguru offers
         "source": "mapbox",
         "polyline": polyline,
-        "vehicleType": "2AxlesAuto",  #'''Visit https://tollguru.com/developers/docs/#vehicle-types to know more options'''
-        "departure_time": "2021-01-05T09:46:08Z",  #'''Visit https://en.wikipedia.org/wiki/Unix_time to know the time format'''
+        **request_parameters,
     }
     # Requesting Tollguru with parameters
     response_tollguru = requests.post(
@@ -83,7 +84,6 @@ def get_rates_from_tollguru(polyline, count=0):
         return response_tollguru["route"]["costs"]
     else:
         raise Exception("{} in row {}".format(response_tollguru["message"], count))
-
 
 """Testing"""
 # Importing Functions
@@ -126,20 +126,24 @@ with open("testCases.csv", "r") as f:
                 rates = get_rates_from_tollguru(polyline)
             except:
                 i.append(False)
+                rates = {}
             time_taken = time.time() - start
-            if rates == {}:
+
+            if not rates:
                 i.append((None, None))
             else:
                 try:
-                    tag = rates["tag"]
+                    tag = rates.get("tag")
                 except:
                     tag = None
                 try:
-                    cash = rates["cash"]
+                    cash = rates.get("cash")
                 except:
                     cash = None
                 i.extend((tag, cash))
+
             i.append(time_taken)
+
         # print(f"{len(i)}   {i}\n")
         temp_list.append(i)
 

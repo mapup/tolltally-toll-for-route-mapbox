@@ -1,41 +1,68 @@
-# toll-mapbox
-Click on the folders above to see examples to extend mapping capabilities of Mapbox by adding toll information from [**TollGuru**](https://tollguru.com/) to the route information from Mapbox.
+# TollTally - Toll for Route (Mapbox)
 
-The toll information has following [key features](https://tollguru.com/developers/features):
-### Support for [geographies](https://github.com/mapup/tollguru_country_coverage/wiki/Countries-supported-by-TollGuru) 
-* North America - Bahamas, Belize, Canada, Costa Rica, Cuba, Dominican Republic, Guatemala, Honduras, Jamaica, Mexico, Panama, Puerto Rico, United States of America
-* Europe - Albania, Andorra, Austria, Belarus, Belgium, Bosnia and Herzegovina, Bulgaria, Croatia, Czechia, Denmark, Estonia, France, Germany, Greece, Hungary, Iceland, Ireland, Italy, Latvia, Lithuania, Luxembourg, Moldova, Montenegro, Netherlands, North Macedonia, Norway, Poland, Portugal, Romania, Russia, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Turkey, United Kingdom
-* Australia - Australia, New Zealand
-* Asia - Brunei, India, Indonesia, Malaysia, Philippines, Singapore, Taiwan, Thailand, Vietnam
-* Latin America - Argentina, Bolivia, Brazil, Chile, Colombia, Ecuador, Guyana, Paraguay, Peru, Uruguay, Venezuela
+This repository provides code examples to extend Mapbox mapping capabilities by adding toll information from [TollGuru](https://tollguru.com/) to the route information from Mapbox.
 
-### Based on vehicles in use in each country, [vehicle type support](https://github.com/mapup/tollguru_vehicle_coverage/wiki/Vehicle-types-supported-by-TollGuru)
-* Car, SUV or Pickup truck. You can specify number of axles including axles in trailers
-* Carpool
-* Taxi
-* Rideshare
-* Motorcycle
-* Truck
-* Bus
-* Recreational vehicle (RV), motorhome, caravan, van
+## What the product/repo is
+A collection of SDK-like examples in multiple languages (JavaScript, Python, Go, PHP, Ruby, .NET) that demonstrate how to calculate toll costs for Mapbox-generated routes by integrating with the TollGuru API.
 
-### Rates for all the available payment options in local currencies
-* Tag transponder (including primary and secondary transponders)
-* cash
-* licence plate
-* credit card
-* prepaid
+## Architecture
+*   **Mapbox Integration**: Consumes the Mapbox Directions API to fetch route details and encoded polylines.
+*   **TollGuru Wrapper**: Acts as a bridge to the TollGuru `complete-polyline-from-mapping-service` endpoint.
+*   **Cross-Platform**: Provides native implementation examples in 6 different programming languages (JS, Python, Go, PHP, Ruby, .NET).
+*   **Stateless Design**: No persistence layer is required; all operations are executed as real-time, on-demand API calls.
+*   **Parameter Flexibility**: Supports passing complex vehicle configurations (axles, weight, height) to ensure accurate tolling for any vehicle type.
+*   **Secure Communication**: Utilizes API Key/Token based authentication over HTTPS for all external requests.
+*   **Output Mapping**: Demonstrates how to parse and map external API responses to useful application data.
 
-### Time based tolls
-You can specify "departure_time" as DateTime (string) or Timestamp (number) to provide you with most accurate toll rates based on time of day/week/month/year, including tolls for express lanes where tolls change as quickly as every five minutes
+Detailed information can be found in [docs/architecture.md](docs/architecture.md).
 
-### All types of toll systems
-Support for barrier, ticket system and distance based tolling configurations
+## Prerequisites
+*   **Mapbox API Key**: Obtain from [Mapbox Dashboard](https://account.mapbox.com/).
+*   **TollGuru API Key**: Obtain from [TollGuru Developers](https://tollguru.com/developers/docs/).
+*   **Language Runtimes**: Node.js, Python, etc., depending on the example being used.
 
-### Support for [all map services](https://github.com/mapup)
-[See the Mapping services list](https://github.com/mapup/toll-mapbox/wiki/2.-Map-platform-service-supported-by-TollGuru) for all mapping platforms supported. You can edit the **source** argument to send polyline from another mapping service.
+## Local Setup
+1.  **Clone the repo**:
+    ```bash
+    git clone https://github.com/mapup/tolltally-toll-for-route-mapbox.git
+    ```
+2.  **Navigate to a language folder**:
+    ```bash
+    cd javascript # or python, go, etc.
+    ```
+3.  **Install dependencies**:
+    *   JS: `npm install`
+    *   Python: `pip install -r requirements.txt`
+4.  **Configure Environment**:
+    ```bash
+    export MAPBOX_API_KEY='your_key'
+    export TOLLGURU_API_KEY='your_key'
+    ```
 
-### Support for trucks based on [height, weight, harardous goods, etc.](https://github.com/mapup/toll-mapbox/wiki/4.-Truck-parameters-supported-by-TollGuru)
-You can receive tolls based on vehicle height, weight etc., while calculating toll: "truckType","shippedHazardousGoods","tunnelCategory","truckRestrictionPenalty" and [more](https://github.com/mapup/toll-mapbox/wiki/4.-Truck-parameters-supported-by-TollGuru).
+## How to run tests
+Some language directories include a `Testing` or `test` folder with manual test scripts and sample data (e.g., Python and Go). For others, you can verify functionality by running the main entry point (e.g., `node index.js`) and observing the console output.
 
-For more examples of the different ways in which the responses from this endpoint can be configured, you can refer to: [Our API parameter examples repository.](https://github.com/mapup/tollguru-api-parameter-examples/tree/main/request-bodies/02-Complete-Polyline-To-Toll)
+## How to deploy
+These are demonstration scripts. For production, integrate the logic into your application services. Ensure secure management of API keys (e.g., using AWS Secrets Manager or environment variables).
+
+## Where config lives
+*   **Environment Variables**: `MAPBOX_API_KEY`, `TOLLGURU_API_KEY`.
+*   **Parameters**: Vehicle and route parameters are defined within the scripts (e.g., `index.js`, `MapBox.py`).
+
+## Known Limitations
+*   Requires a valid polyline from Mapbox; errors in routing geometry will affect toll results.
+*   Subject to rate limits of both Mapbox and TollGuru APIs.
+
+## Maintenance and Operations
+Refer to [docs/runbook.md](docs/runbook.md) for recovery steps, logging, and monitoring details.
+
+---
+
+## Key Features (TollGuru)
+*   **Geographies**: Support for North America, Europe, Australia, Asia, and Latin America.
+*   **Vehicle Types**: Support for Cars, Trucks, Taxis, Motorcycles, RVs, and more.
+*   **Payment Options**: Rates for Tag, Cash, License Plate, Credit Card, and Prepaid.
+*   **Time-based Tolls**: Support for "departure_time" to handle dynamic tolling and express lanes.
+*   **Truck Specifics**: Support for height, weight, hazardous goods, and axle-based pricing.
+
+For more examples, visit the [TollGuru API Parameter Examples](https://github.com/mapup/tollguru-api-parameter-examples/tree/main/request-bodies/02-Complete-Polyline-To-Toll).

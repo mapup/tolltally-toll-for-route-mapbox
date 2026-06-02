@@ -33,33 +33,31 @@ jobs:
 
       - name: Wrap results with repo metadata and send
         if: always()
+        env:
+          SAST_WEBHOOK_URL: ${{ secrets.SAST_WEBHOOK_URL }}
+          SAST_WEBHOOK_TOKEN: ${{ secrets.SAST_WEBHOOK_TOKEN }}
         run: |
-          # Build a wrapper with repo/org info + semgrep results
-          # jq may not be in semgrep image, so use python which is guaranteed
           python3 -c "
           import json, os
-
-          # GitHub context
-          repo_full = os.environ.get('GITHUB_REPOSITORY', 'unknown/unknown')  # e.g. mapup/tollguru-api
+      
+          repo_full = os.environ.get('GITHUB_REPOSITORY', 'unknown/unknown')
           parts = repo_full.split('/', 1)
           org = parts[0] if len(parts) > 1 else 'unknown'
           repo = parts[1] if len(parts) > 1 else repo_full
-
+      
           ref = os.environ.get('GITHUB_REF', 'unknown')
           sha = os.environ.get('GITHUB_SHA', 'unknown')
           actor = os.environ.get('GITHUB_ACTOR', 'unknown')
           event = os.environ.get('GITHUB_EVENT_NAME', 'unknown')
           run_id = os.environ.get('GITHUB_RUN_ID', 'unknown')
           server = os.environ.get('GITHUB_SERVER_URL', 'https://github.com')
-
-          # Load semgrep results
+      
           try:
               with open('semgrep-results.json', 'r') as f:
                   semgrep = json.load(f)
           except Exception:
               semgrep = {'results': [], 'errors': [], 'version': 'unknown'}
-
-          # Wrap payload
+      
           payload = {
               'tool': 'semgrep',
               'org': org,
@@ -74,16 +72,22 @@ jobs:
               'errors': semgrep.get('errors', []),
               'version': semgrep.get('version', 'unknown')
           }
-
+      
           with open('semgrep-payload.json', 'w') as f:
               json.dump(payload, f)
-
-          print(f'✅ Wrapped {len(payload[\"results\"])} findings for {org}/{repo}')
+      
+          print(f'Wrapped {len(payload[\"results\"])} findings for {org}/{repo}')
           "
-
-          curl -X POST "${{ secrets.SAST_WEBHOOK_URL }}?branch=${{ github.head_ref || github.ref_name }}&&repo=${{ github.event.repository.name }}" \
+      
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+      
+          # Strip any accidental whitespace/newlines from secret
+          CLEAN_URL=$(echo "$SAST_WEBHOOK_URL" | tr -d '[:space:]')
+      
+          curl -X POST "${CLEAN_URL}?branch=${BRANCH}&repo=${REPO_NAME}" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.SAST_WEBHOOK_TOKEN }}" \
+            -H "Authorization: Bearer ${SAST_WEBHOOK_TOKEN}" \
             -d @semgrep-payload.json
 
 # name: Semgrep SAST

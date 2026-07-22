@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	MAPBOX_API_KEY   string = "pk.eyJ1IjoiYWJoaW5hdm1hcHVwIiwiYSI6ImNsdGd6cnhjZjAyMTAybWs4cG5vNXA4bGgifQ.XPDJnVJjo2WxRkVm-vzygA"
-	TOLLGURU_API_KEY string = "Dd6AAjtNnBrb9hrBLB9jqpF79JL8DfnA"
+	MAPBOX_API_KEY   string = os.Getenv("MAPBOX_API_KEY")
+	TOLLGURU_API_KEY string = os.Getenv("TOLLGURU_API_KEY")
 )
 
 const (
@@ -65,6 +65,10 @@ func readCsvFile(filePath string) [][]string {
 }
 
 func main() {
+	if MAPBOX_API_KEY == "" || TOLLGURU_API_KEY == "" {
+		log.Fatalln("Set the MAPBOX_API_KEY and TOLLGURU_API_KEY environment variables before running")
+	}
+
 	records := readCsvFile(filePath)
 
 	for i := 1; i < len(records); i++ {

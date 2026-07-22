@@ -23,3 +23,17 @@ The user has to enter the from and to in the CSV file and the program will give 
 ```
 
 Whole working code can be found in test.go file.
+
+### Running the tests
+
+The API keys are read from the environment, so export them before running:
+
+```sh
+export MAPBOX_API_KEY="your-mapbox-token"
+export TOLLGURU_API_KEY="your-tollguru-key"
+
+cd go/test
+go run test.go
+```
+
+Never hardcode the keys in `test.go` — the repository is public and committed secrets stay in git history even after they are deleted.

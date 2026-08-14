@@ -36,8 +36,8 @@ $url='https://api.mapbox.com/directions/v5/mapbox/driving/'.$source_longitude.',
 //connection..
 $mapbox = curl_init();
 
-curl_setopt($mapbox, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($mapbox, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($mapbox, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($mapbox, CURLOPT_SSL_VERIFYPEER, true);
 
 curl_setopt($mapbox, CURLOPT_URL, $url);
 curl_setopt($mapbox, CURLOPT_RETURNTRANSFER, true);
@@ -82,8 +82,8 @@ This snippet can be added at end of the above code to get rates and other detail
 //using tollguru API..
 $curl = curl_init();
 
-curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
 
 
 $postdata = array(

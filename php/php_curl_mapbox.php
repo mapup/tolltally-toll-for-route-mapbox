@@ -31,8 +31,8 @@ $url=$MAPBOX_API_URL.'/'.$source_longitude.','.$source_latitude.';'.$destination
 // Connection..
 $mapbox = curl_init();
 
-curl_setopt($mapbox, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($mapbox, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($mapbox, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($mapbox, CURLOPT_SSL_VERIFYPEER, true);
 
 curl_setopt($mapbox, CURLOPT_URL, $url);
 curl_setopt($mapbox, CURLOPT_RETURNTRANSFER, true);
@@ -58,8 +58,8 @@ $polyline_mapbox = $data_mapbox['routes']['0']['geometry'];
 // Using TollGuru API..
 $curl = curl_init();
 
-curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
+curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
 
 $postdata = array(
 	"source" => "mapbox",

@@ -2,8 +2,13 @@ name: Dependency Track SBOM Scan
 
 # PORTABLE TEMPLATE — copy into
 # <your-repo>/.github/workflows/universal-dependency-track.yml as-is;
-# nothing repo-specific in it. Identical to
-# mapup-security-team/.github/workflows/universal-dependency-track.yml.
+# nothing repo-specific in it.
+#
+# DIVERGES from mapup-security-team/.github/workflows/universal-dependency-track.yml:
+# adds Ruby gem installation, a second Trivy pass in rootfs mode, and a
+# license-merge step, so gems no longer land in Dependency-Track with no
+# license metadata. Do not re-copy the upstream template over this file
+# without carrying those three changes across.
 #
 # Covers TWO of the org's tracked tools in one file: Trivy (generates the
 # CycloneDX SBOM in license mode) and Dependency-Track (receives it).
@@ -128,6 +133,20 @@ jobs:
             (cd "$dir" && (./gradlew dependencies 2>/dev/null || gradle dependencies 2>/dev/null || echo "Note: gradle dependencies failed in $dir"))
           done
 
+          # Ruby projects: install the gems pinned in Gemfile.lock so Trivy can
+          # read licenses from the installed .gemspec files — Gemfile.lock itself
+          # carries no license metadata. Gems go to a local --install-dir, so this
+          # needs no sudo and ignores the Gemfile's (often stale) `ruby` pin.
+          find . -name "Gemfile.lock" -not -path "*/.git/*" -not -path "*/vendor/*" | while read -r lock; do
+            dir=$(dirname "$lock")
+            echo "💎 Found Ruby project in: $dir (ruby $(ruby -v 2>/dev/null || echo 'not installed'))"
+            awk '/^  specs:/{f=1;next} /^$/{f=0} f && /^    [a-zA-Z]/{gsub(/[()]/,"");print $1":"$2}' "$lock" \
+              | while read -r g; do
+                  (cd "$dir" && gem install --no-document --install-dir vendor/bundle "$g" >/dev/null 2>&1) \
+                    || echo "Note: gem install $g failed in $dir"
+                done
+          done
+
           echo "✅ Dependency installation complete"
         continue-on-error: true
 
@@ -140,30 +159,53 @@ jobs:
           scanners: license
           license-full: true
 
-      - name: Clean and validate SBOM
+      # Trivy's `fs` scan reads Gemfile.lock, which has no license fields. Its
+      # gemspec analyzer — the one that does resolve gem licenses — only runs in
+      # `rootfs` mode. `rootfs` alone is not a substitute: it derives npm packages
+      # by walking node_modules instead of the lockfile, which loses the dependency
+      # graph and invents components for nested test fixtures. So run it purely as
+      # a license lookup table and merge it into the `fs` BOM below.
+      - name: Generate license-lookup SBOM with Trivy (rootfs mode)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: rootfs
+          format: cyclonedx
+          output: bom-licenses.json
+          scanners: license
+          license-full: true
+
+      - name: Merge licenses, clean and validate SBOM
         run: |
-          echo "🧹 Cleaning SBOM (removing lock files and false positives)..."
-          cat bom-raw.json | jq '
-            .components |= map(select(
-              .name != "package-lock.json" and
-              .name != "yarn.lock" and
-              .name != "pnpm-lock.yaml" and
-              .name != "go.mod" and
-              .name != "go.sum" and
-              .name != "uv.lock" and
-              .name != "poetry.lock" and
-              .name != "Pipfile.lock" and
-              .name != "Cargo.lock" and
-              .name != "composer.lock" and
-              (.name | test(".*lock\\.json$") | not)
-            ))
+          echo "🔗 Merging licenses from the rootfs pass into the fs BOM..."
+          echo "🧹 Cleaning SBOM (removing manifest/lock files and false positives)..."
+          jq -n --slurpfile raw bom-raw.json --slurpfile lic bom-licenses.json '
+            # Licenses the rootfs pass resolved, keyed by purl.
+            ($lic[0].components // [] | map(select(.purl and .licenses)) | INDEX(.purl)) as $bypurl
+            | $raw[0]
+            # Fill in licenses only where the fs pass found none. Never adds a
+            # component, so rootfs-only false positives cannot leak in.
+            | .components |= map(
+                if (.licenses | not) and .purl and $bypurl[.purl]
+                then .licenses = $bypurl[.purl].licenses
+                else . end)
+            # Drop the scanned manifest/lock files themselves — they are the
+            # files owned by this repo, not third-party components, and unlicensed.
+            | .components |= map(select(
+                (.type != "application") or
+                (.name | test("(^|/)(package-lock\\.json|yarn\\.lock|pnpm-lock\\.yaml|go\\.mod|go\\.sum|uv\\.lock|poetry\\.lock|Pipfile\\.lock|Cargo\\.lock|composer\\.lock|Gemfile\\.lock|.*lock\\.json)$") | not)))
+            # Prune dependency refs pointing at the components just removed,
+            # so the BOM has no dangling bom-refs.
+            | ([.components[]."bom-ref"] + [.metadata.component."bom-ref"] | map(select(. != null))) as $keep
+            | .dependencies |= (map(select(.ref as $r | $keep | index($r)))
+                                | map(.dependsOn |= ((. // []) | map(select(. as $d | $keep | index($d))))))
           ' > bom.json
 
           echo ""
           echo "📊 SBOM Statistics:"
           cat bom.json | jq '{
               totalComponents: (.components | length),
-              componentsWithLicenses: ([.components[] | select(.licenses)] | length)
+              componentsWithLicenses: ([.components[] | select(.licenses)] | length),
+              componentsMissingLicenses: ([.components[] | select(.licenses | not) | .name])
           }'
 
       - name: Upload BOM to Dependency-Track
